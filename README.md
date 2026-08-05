@@ -31,3 +31,53 @@ A hands-on implementation of an enterprise Linux Network Security Gateway utiliz
 
 ## 🛠️ Technical Skills Highlighted
 `Linux Administration (Ubuntu/CentOS)` | `Squid Proxy` | `IPTables / NAT` | `PAC File Scripting` | `Network Diagnostics (tcpdump, ss, netstat)` | `Log Analysis (grep, awk)`
+
+
+## 📐 Architecture Topology
+
+```text
+<paste the ASCII diagram here>
+
+                         +-----------------------------------+
+                         |       Internal LAN Client         |
+                         |   (192.168.1.50 / 10.100.0.50)    |
+                         +-----------------------------------+
+                                           |
+                                           | 1. Browser Evaluates
+                                           |    proxy_steering.js
+                                           v
+                       +---------------------------------------+
+                       |           Traffic Decision            |
+                       +---------------------------------------+
+                           /                               \
+     (Internal LAN / RFC 1918)                           (Public Web Request)
+             /                                                 \
+            v                                                   v
++-----------------------+                         +---------------------------+
+|    DIRECT Connection  |                         |  Linux Security Gateway   |
+|  (Bypasses Gateway)   |                         |  (Squid Proxy : Port 3128)|
++-----------------------+                         +---------------------------+
+                                                                |
+                                                                | 2. Evaluates ACLs in
+                                                                |    squid.conf
+                                                                v
+                                                +-------------------------------+
+                                                |  Is Host in                   |
+                                                |  blocked_domains.txt?         |
+                                                +-------------------------------+
+                                                    /                       \
+                                                (YES)                       (NO)
+                                                  /                           \
+                                                 v                             v
+                                  +---------------------------+   +---------------------------+
+                                  |   HTTP 403 Forbidden      |   |  Forward Request to       |
+                                  |   (Request Denied)        |   |  Public Internet          |
+                                  +---------------------------+   +---------------------------+
+                                                |                               |
+                                                +---------------+---------------+
+                                                                |
+                                                                v 3. Log Event
+                                                  +---------------------------+
+                                                  | /var/log/squid/access.log |
+                                                  |  (Monitored via CLI)      |
+                                                  +---------------------------+
